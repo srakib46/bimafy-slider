@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How Bimafy Works - Slider</title>
+
+  <style>
+    :root {
+      --text: rgba(10, 35, 70, 0.95);
+      --muted: rgba(10, 35, 70, 0.7);
+      --cardBg: rgba(255, 255, 255, 0.75);
+      --border: rgba(10, 35, 70, 0.12);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+      --radius: 18px;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: #fff;
+    }
+
+    /* Section background */
+    .how-works-section {
+      position: relative;
+      padding: 70px 18px 90px;
+      background-image: url("/images/background-image.png"); /* keep your bg if needed */
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .how-works-section::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.55);
+      pointer-events: none;
+    }
+
+    .how-works-inner {
+      position: relative;
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .how-works-title {
+      font-size: clamp(26px, 3vw, 40px);
+      font-weight: 700;
+      margin: 0 0 26px;
+    }
+
+    /* ✅ Slider will auto-size based on Image-1 */
+    .slider {
+      width: 100%;
+      max-width: var(--slider-max-width, 900px);
+      margin: 0 auto;
+      background: var(--cardBg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      user-select: none;
+      touch-action: pan-y;
+      backdrop-filter: blur(8px);
+    }
+
+    .track {
+      display: flex;
+      transition: transform 420ms ease;
+      will-change: transform;
+    }
+
+    .slide {
+      min-width: 100%;
+      position: relative;
+      background: #fff;
+    }
+
+    /* ✅ Height comes from image itself (no fixed aspect-ratio) */
+    .slide img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(10, 35, 70, 0.16);
+      background: rgba(255, 255, 255, 0.75);
+      color: #0a2346;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    .prev { left: 12px; }
+    .next { right: 12px; }
+
+    .dots {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(10, 35, 70, 0.12);
+      backdrop-filter: blur(8px);
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: rgba(10, 35, 70, 0.25);
+      padding: 0;
+    }
+    .dot[aria-current="true"] { background: rgba(10, 35, 70, 0.9); }
+  </style>
+</head>
+
+<body>
+  <section class="how-works-section" id="how-bimafy-works">
+    <div class="how-works-inner">
+      <h2 class="how-works-title">How Bimafy Works</h2>
+
+      <div class="slider" id="slider" aria-roledescription="carousel">
+        <div class="track" id="track">
+
+          <!-- ✅ Image-1 (your image) -->
+          <div class="slide">
+            <img id="firstSlideImg" src="/images/step - 1.png" alt="Step 1" />
+          </div>
+
+          <!-- Other slides (replace as needed) -->
+          <div class="slide">
+            <img src="/images/step - 2.png" alt="Step 2" />
+          </div>
+
+          <div class="slide">
+            <img src="/images/step - 3.png" alt="Step 3" />
+          </div>
+          <div class="slide">
+            <img src="/images/step - 4.png" alt="Step 4" />
+          </div>
+
+        </div>
+
+        <button class="nav-btn prev" id="prev" aria-label="Previous slide">❮</button>
+        <button class="nav-btn next" id="next" aria-label="Next slide">❯</button>
+        <div class="dots" id="dots" aria-label="Slide dots"></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+
+    (function () {
+  const slider = document.getElementById("slider");
+  const track = document.getElementById("track");
+  const prevBtn = document.getElementById("prev");
+  const nextBtn = document.getElementById("next");
+  const dotsWrap = document.getElementById("dots");
+  const firstImg = document.getElementById("firstSlideImg");
+
+  const slides = Array.from(track.children);
+  const total = slides.length;
+  let index = 0;
+
+  // Set slider width based on first image
+  function setSliderSizeFromFirstImage() {
+    const w = firstImg.naturalWidth;
+    if (w && w > 0) {
+      slider.style.setProperty("--slider-max-width", w + "px");
+    }
+  }
+
+  if (firstImg.complete) setSliderSizeFromFirstImage();
+  firstImg.addEventListener("load", setSliderSizeFromFirstImage);
+
+  // Create dots
+  const dots = slides.map((_, i) => {
+    const b = document.createElement("button");
+    b.className = "dot";
+    b.type = "button";
+    b.setAttribute("aria-label", `Go to slide ${i + 1}`);
+    b.addEventListener("click", () => goTo(i));
+    dotsWrap.appendChild(b);
+    return b;
+  });
+
+  function update() {
+    track.style.transform = `translateX(${-index * 100}%)`;
+    dots.forEach((d, i) =>
+      d.setAttribute("aria-current", i === index ? "true" : "false")
+    );
+  }
+
+  function goTo(i) {
+    index = (i + total) % total;
+    update();
+  }
+
+  function next() { goTo(index + 1); }
+  function prev() { goTo(index - 1); }
+
+  prevBtn.addEventListener("click", prev);
+  nextBtn.addEventListener("click", next);
+
+  /* ✅ KEYBOARD ARROW SUPPORT */
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight") {
+      next();
+    }
+    if (e.key === "ArrowLeft") {
+      prev();
+    }
+  });
+
+  // swipe support
+  let startX = 0, isDown = false;
+
+  slider.addEventListener("pointerdown", (e) => {
+    isDown = true;
+    startX = e.clientX;
+  });
+
+  slider.addEventListener("pointerup", (e) => {
+    if (!isDown) return;
+    isDown = false;
+
+    const dx = e.clientX - startX;
+
+    if (dx > 40) prev();
+    else if (dx < -40) next();
+  });
+
+  update();
+})();
+  </script>
+</body>
+</html>
